@@ -1,0 +1,24 @@
+export type ActionArgs = {
+    registryEndpoint?: string;
+    registryAuth?: string;
+    systemDest: string;
+    systemAsHost: string;
+    systemSysNr: string;
+    systemSapRouter?: string;
+    systemClient: string;
+    systemLang: string;
+    systemUser: string;
+    systemPassword: string;
+    packageName: string;
+    packageVersion?: string;
+    forceInstall: boolean;
+    ignoreSapEntries: boolean;
+    importTimeout: number;
+    keepOriginalPackages: boolean;
+    packageReplacements?: string;
+    skipDependencies: boolean;
+    skipWbTransport: boolean;
+    targetSystem?: string;
+    transportLayer?: string;
+};
+export declare function install(data: ActionArgs): Promise<void>;

@@ -1,0 +1,81 @@
+name: 'TRM Install'
+description: 'Install a package from TRM Registry'
+author: 'Simone Gaffurini'
+branding:
+  icon: 'download'
+  color: 'green'
+inputs:
+  registryEndpoint:
+    description: 'TRM Registry Endpoint'
+    default: 'public'
+    required: false
+  registryAuth:
+    description: 'TRM Registry Auth (JSON)'
+    required: false
+  systemDest:
+    description: 'System ID'
+    required: true
+  systemAsHost:
+    description: 'System Application Server Address'
+    required: true
+  systemSysNr:
+    description: 'System Instance Number'
+    required: true
+  systemSapRouter:
+    description: 'System SAP Router String'
+    required: false
+  systemClient:
+    description: 'System Logon Client'
+    required: true
+  systemLang:
+    description: 'System Logon Language'
+    required: true
+  systemUser:
+    description: 'System Logon User'
+    required: true
+  systemPassword:
+    description: 'System Logon Password'
+    required: true
+  packageName:
+    description: 'TRM Package name'
+    required: false
+  packageVersion:
+    description: 'TRM Package version'
+    required: false
+    default: 'latest'
+  forceInstall:
+    description: 'Force package install'
+    required: false
+    default: false
+  ignoreSapEntries:
+    description: 'Ignore SAP entries'
+    required: false
+    default: false
+  importTimeout:
+    description: 'Transport import timeout (in seconds)'
+    default: 180
+    required: false
+  keepOriginalPackages:
+    description: 'Keep original packages'
+    required: false
+    default: false
+  packageReplacements:
+    description: 'JSON string or path to file containing package replacements'
+    required: false
+  skipDependencies:
+    description: 'Skip package dependencies'
+    required: false
+    default: false
+  skipWbTransport:
+    description: 'Skip workbench transport generation'
+    required: false
+    default: false
+  targetSystem:
+    description: 'Workbench transport target system'
+    required: false
+  transportLayer:
+    description: 'Packages transport layer'
+    required: false
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

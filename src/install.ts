@@ -1,4 +1,4 @@
-import { CliInquirer, ConsoleLogger, Inquirer, Logger, Registry, ServerSystemConnector, SystemConnector, install as action } from "trm-core";
+import { CliInquirer, ConsoleLogger, Inquirer, InstallPackageReplacements, Logger, Registry, ServerSystemConnector, SystemConnector, install as action } from "trm-core";
 import * as core from "@actions/core";
 import { GithubLogger } from "./GithubLogger";
 
@@ -10,8 +10,24 @@ export type ActionArgs = {
     systemUser: string,
     systemPassword: string,
     systemLang: string,
+    packageName: string,
+    packageVersion: string,
+    allowReplace: boolean,
+    force: boolean,
+    generateTransport: boolean,
+    ignoreDependencies: boolean,
+    importTimeout: number,
+    keepOriginalDevclass: boolean,
     registryEndpoint: string,
+    skipCustImport: boolean,
+    skipLangImport: boolean,
+    skipObjectTypesCheck: boolean,
+    skipSapEntriesCheck: boolean,
+    transportLayer?: string,
+    wbTrTargetSystem?: string,
+    packageReplacements?: string,
     registryAuth?: string,
+    r3transTempFolder?: string,
     simpleLog: boolean
 };
 
@@ -34,6 +50,29 @@ const _getRegistry = async (endpoint: string, auth?: string): Promise<Registry> 
         }
     }
     return registry;
+}
+
+const _getPackageReplacements = (iPackageReplacements: string): InstallPackageReplacements[] => {
+    var packageReplacements;
+    try{
+        packageReplacements = JSON.parse(iPackageReplacements).map(o => {
+            return {
+                originalDevclass: o.originalDevclass,
+                installDevclass: o.installDevclass
+            }
+        });
+    }catch(e){
+        packageReplacements = [];
+    }
+    packageReplacements.forEach(o => {
+        if(!o.originalDevclass){
+            throw new Error(`Package replacement input: missing original devclass.`);
+        }
+        if(!o.installDevclass){
+            throw new Error(`Package replacement input: missing install devclass.`);
+        }
+    });
+    return packageReplacements;
 }
 
 export async function install(data: ActionArgs) {
@@ -60,25 +99,43 @@ export async function install(data: ActionArgs) {
     const registry = await _getRegistry(data.registryEndpoint, data.registryAuth);
 
     //data parsing
+    const packageName = data.packageName;
+    const version = data.packageVersion;
+    const allowReplace = data.allowReplace;
+    const force = data.force;
+    const generateTransport = data.generateTransport;
+    const ignoreDependencies = data.ignoreDependencies;
+    const importTimeout = data.importTimeout;
+    const keepOriginalDevclass = data.keepOriginalDevclass;
+    const packageReplacements = _getPackageReplacements(data.packageReplacements);
+    const r3transTempFolder = data.r3transTempFolder;
+    const skipCustImport = data.skipCustImport;
+    const skipLangImport = data.skipLangImport;
+    const skipObjectTypesCheck = data.skipObjectTypesCheck;
+    const skipSapEntriesCheck = data.skipSapEntriesCheck;
+    const transportLayer = data.transportLayer;
+    const wbTrTargetSystem = data.wbTrTargetSystem;
     
     await action({
-        packageName: '',
+        packageName,
+        version,
         registry,
-        allowReplace: false,
-        force: false,
-        generateTransport: false,
-        ignoreDependencies: false,
-        importTimeout: 1,
-        keepOriginalDevclass: false,
-        packageReplacements: [],
-        r3transOptions: {},
-        silent: false,
-        skipCustImport: false,
-        skipLangImport: false,
-        skipObjectTypesCheck: false,
-        skipSapEntriesCheck: false,
-        transportLayer: '',
-        version: '',
-        wbTrTargetSystem: ''
+        allowReplace,
+        force,
+        generateTransport,
+        ignoreDependencies,
+        importTimeout,
+        keepOriginalDevclass,
+        packageReplacements,
+        r3transOptions: {
+            tempDirPath: r3transTempFolder
+        },
+        skipCustImport,
+        skipLangImport,
+        skipObjectTypesCheck,
+        skipSapEntriesCheck,
+        transportLayer,
+        wbTrTargetSystem,
+        silent: true
     });
 }

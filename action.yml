@@ -41,11 +41,11 @@ inputs:
     description: Registry authentication in JSON format
     required: false
   allowReplace:
-    description: Handle conflict during install of an SAP package that already exists on the target system
+    description: Allow replacing package if already installed (has not effect with force = true)
     default: false
     required: false
   force:
-    description: Force install
+    description: Force install (ignore SAP Entries, skip object types check, allow package overwrite, ignore dependencies)
     default: false
     required: false
   generateTransport:
@@ -69,12 +69,12 @@ inputs:
     description: Transport request release timeout, in seconds (increase for larger packages)
     default: 180
     required: false
-  ignoreDependencies:
-    description: Ignore install/check of package dependencies
+  ignoreDependencies: 
+    description: Ignore install/check of package dependencies (has not effect with force = true)
     default: false
     required: false
   skipSapEntriesCheck:
-    description: Skip required SAP Entries check
+    description: Skip required SAP Entries check (has not effect with force = true)
     default: false
     required: false
   skipCustImport:
@@ -86,7 +86,7 @@ inputs:
     default: false
     required: false
   skipObjectTypesCheck:
-    description: Skip package object types check
+    description: Skip package object types check (has not effect with force = true)
     default: false
     required: false
   r3transTempFolder:

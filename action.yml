@@ -5,76 +5,96 @@ branding:
   icon: 'download'
   color: 'green'
 inputs:
-  registryEndpoint:
-    description: 'TRM Registry Endpoint'
-    default: 'public'
-    required: false
-  registryAuth:
-    description: 'TRM Registry Auth (JSON)'
-    required: false
   systemDest:
-    description: 'System ID'
+    description: Target system ID
     required: true
   systemAsHost:
-    description: 'System Application Server Address'
+    description: Target system application Server
     required: true
-  systemSysNr:
-    description: 'System Instance Number'
+  systemSysnr:
+    description: Target system instance number
     required: true
-  systemSapRouter:
-    description: 'System SAP Router String'
-    required: false
   systemClient:
-    description: 'System Logon Client'
-    required: true
-  systemLang:
-    description: 'System Logon Language'
+    description: Target system logon client
     required: true
   systemUser:
-    description: 'System Logon User'
+    description: Target system logon user
     required: true
   systemPassword:
-    description: 'System Logon Password'
+    description: Target system logon password
+    required: true
+  systemLang:
+    description: Target system logon language
     required: true
   packageName:
-    description: 'TRM Package name'
-    required: false
+    description: Package name (on registry)
+    required: true
   packageVersion:
-    description: 'TRM Package version'
+    description: Package version (on registry)
+    default: latest
     required: false
-    default: 'latest'
-  forceInstall:
-    description: 'Force package install'
+  registryEndpoint:
+    description: Registry endpoint
+    default: public
     required: false
+  registryAuth:
+    description: Registry authentication in JSON format
+    required: false
+  allowReplace:
+    description: Handle conflict during install of an SAP package that already exists on the target system
     default: false
-  ignoreSapEntries:
-    description: 'Ignore SAP entries'
     required: false
+  force:
+    description: Force install
     default: false
-  importTimeout:
-    description: 'Transport import timeout (in seconds)'
-    default: 180
     required: false
-  keepOriginalPackages:
-    description: 'Keep original packages'
+  generateTransport:
+    description: Generate (if not existent) a workbench transport with all the contents of the package
+    default: true
     required: false
-    default: false
-  packageReplacements:
-    description: 'JSON string or path to file containing package replacements'
-    required: false
-  skipDependencies:
-    description: 'Skip package dependencies'
-    required: false
-    default: false
-  skipWbTransport:
-    description: 'Skip workbench transport generation'
-    required: false
-    default: false
-  targetSystem:
-    description: 'Workbench transport target system'
+  wbTrTargetSystem:
+    description: Target system for workbench transport (works if generateTransport is set to true)
     required: false
   transportLayer:
-    description: 'Packages transport layer'
+    description: SAP Package transport layer (defaults to system default)
+    required: false
+  keepOriginalDevclass:
+    description: Keep the original SAP package names (no replacement)
+    default: true
+    required: false
+  packageReplacements:
+    description: SAP package names replacements in JSON format (works if keepOriginalDevclass is set to false)
+    required: false
+  importTimeout:
+    description: Transport request release timeout, in seconds (increase for larger packages)
+    default: 180
+    required: false
+  ignoreDependencies:
+    description: Ignore install/check of package dependencies
+    default: false
+    required: false
+  skipSapEntriesCheck:
+    description: Skip required SAP Entries check
+    default: false
+    required: false
+  skipCustImport:
+    description: Skip package customizing transport import
+    default: false
+    required: false
+  skipLangImport:
+    description: Skip package language transport import
+    default: false
+    required: false
+  skipObjectTypesCheck:
+    description: Skip package object types check
+    default: false
+    required: false
+  r3transTempFolder:
+    description: Directory for R3Trans temporary files
+    required: false
+  simpleLog:
+    description: Don't use Github Actions annotations on important log messages
+    default: false
     required: false
 runs:
   using: 'node20'

@@ -1,30 +1,42 @@
 import * as core from "@actions/core";
 import { install } from "./install";
 
+var importTimeout: number;
+try{
+    importTimeout = parseInt(core.getInput('importTimeout'));
+}catch(e){
+    core.setFailed(`Invalid import timeout value.`);
+}
+
 install({
-    registryEndpoint: core.getInput('registryEndpoint'),
-    registryAuth: core.getInput('registryAuth'),
     systemDest: core.getInput('systemDest'),
     systemAsHost: core.getInput('systemAsHost'),
-    systemSysNr: core.getInput('systemSysNr'),
-    systemSapRouter: core.getInput('systemSapRouter'),
+    systemSysnr: core.getInput('systemSysnr'),
     systemClient: core.getInput('systemClient'),
-    systemLang: core.getInput('systemLang'),
     systemUser: core.getInput('systemUser'),
     systemPassword: core.getInput('systemPassword'),
+    systemLang: core.getInput('systemLang'),
     packageName: core.getInput('packageName'),
     packageVersion: core.getInput('packageVersion'),
-    forceInstall: core.getBooleanInput('forceInstall'),
-    ignoreSapEntries: core.getBooleanInput('ignoreSapEntries'),
-    importTimeout: parseInt(core.getInput('importTimeout')),
-    keepOriginalPackages: core.getBooleanInput('keepOriginalPackages'),
-    packageReplacements: core.getInput('packageReplacements'),
-    skipDependencies: core.getBooleanInput('skipDependencies'),
-    skipWbTransport: core.getBooleanInput('skipWbTransport'),
-    targetSystem: core.getInput('targetSystem'),
+    allowReplace: core.getBooleanInput('allowReplace'),
+    force: core.getBooleanInput('force'),
+    generateTransport: core.getBooleanInput('generateTransport'),
+    ignoreDependencies: core.getBooleanInput('ignoreDependencies'),
+    importTimeout,
+    keepOriginalDevclass: core.getBooleanInput('keepOriginalDevclass'),
+    registryEndpoint: core.getInput('registryEndpoint'),
+    skipCustImport: core.getBooleanInput('skipCustImport'),
+    skipLangImport: core.getBooleanInput('skipLangImport'),
+    skipObjectTypesCheck: core.getBooleanInput('skipObjectTypesCheck'),
+    skipSapEntriesCheck: core.getBooleanInput('skipSapEntriesCheck'),
     transportLayer: core.getInput('transportLayer'),
+    wbTrTargetSystem: core.getInput('wbTrTargetSystem'),
+    packageReplacements: core.getInput('packageReplacements'),
+    registryAuth: core.getInput('registryAuth'),
+    r3transTempFolder: core.getInput('r3transTempFolder'),
+    simpleLog: core.getBooleanInput('simpleLog'),
 }).then(() => {
-    console.log("OK.");
+    console.log("Package installed.");
 }).catch(err => {
     core.setFailed(err.message);
 });

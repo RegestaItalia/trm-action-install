@@ -33,76 +33,113 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.install = void 0;
-const trm_registry_types_1 = require("trm-registry-types");
 const trm_core_1 = require("trm-core");
-const fs = __importStar(require("fs"));
+const core = __importStar(require("@actions/core"));
+const GithubLogger_1 = require("./GithubLogger");
+const _getRegistry = (endpoint, auth) => __awaiter(void 0, void 0, void 0, function* () {
+    const registry = new trm_core_1.Registry(endpoint);
+    if (auth) {
+        var oAuth;
+        try {
+            oAuth = JSON.parse(auth);
+        }
+        catch (e) {
+            throw new Error(`Invalid registry authentication data.`);
+        }
+        trm_core_1.Logger.loading(`Logging into registry...`);
+        yield registry.authenticate(oAuth);
+        const whoami = yield registry.whoAmI();
+        const ping = yield registry.ping();
+        trm_core_1.Logger.success(`Logged in as "${whoami.username}"`);
+        if (ping.wallMessage) {
+            trm_core_1.Logger.registryResponse(ping.wallMessage);
+        }
+    }
+    return registry;
+});
+const _getPackageReplacements = (iPackageReplacements) => {
+    var packageReplacements;
+    try {
+        packageReplacements = JSON.parse(iPackageReplacements).map(o => {
+            return {
+                originalDevclass: o.originalDevclass,
+                installDevclass: o.installDevclass
+            };
+        });
+    }
+    catch (e) {
+        packageReplacements = [];
+    }
+    packageReplacements.forEach(o => {
+        if (!o.originalDevclass) {
+            throw new Error(`Package replacement input: missing original devclass.`);
+        }
+        if (!o.installDevclass) {
+            throw new Error(`Package replacement input: missing install devclass.`);
+        }
+    });
+    return packageReplacements;
+};
 function install(data) {
     return __awaiter(this, void 0, void 0, function* () {
-        const registryEndpoint = data.registryEndpoint || 'public';
-        const registryAuth = data.registryAuth ? JSON.parse(data.registryAuth) : undefined;
-        const logger = new trm_core_1.Logger(trm_core_1.CoreEnv.CLI, trm_core_1.TraceLevel.TRACE_ALL);
-        const inquirer = new trm_core_1.Inquirer(trm_core_1.CoreEnv.DUMMY);
-        const oRegistry = new trm_core_1.Registry(registryEndpoint, registryEndpoint);
-        const packageName = data.packageName;
-        const packageVersion = data.packageVersion || 'latest';
-        const forceInstall = data.forceInstall;
-        const ignoreSapEntries = data.ignoreSapEntries;
-        const importTimeout = data.importTimeout;
-        const keepOriginalPackages = data.keepOriginalPackages;
-        const skipDependencies = data.skipDependencies;
-        const skipWbTransport = data.skipWbTransport;
-        const targetSystem = data.targetSystem;
-        const transportLayer = data.transportLayer;
-        var packageReplacements = data.packageReplacements;
-        if (packageReplacements) {
-            var sPackageReplacements;
-            try {
-                sPackageReplacements = fs.readFileSync(packageReplacements).toString();
-            }
-            catch (e) {
-                sPackageReplacements = packageReplacements;
-            }
-            packageReplacements = JSON.parse(sPackageReplacements);
+        const debug = core.isDebug();
+        if (data.simpleLog) {
+            trm_core_1.Logger.logger = new trm_core_1.ConsoleLogger(debug);
         }
         else {
-            packageReplacements = [];
+            trm_core_1.Logger.logger = new GithubLogger_1.GithubLogger(debug);
         }
-        const registryPing = yield oRegistry.ping();
-        if (registryPing.wallMessage) {
-            logger.registryResponse(registryPing.wallMessage);
-        }
-        if (registryAuth && registryPing.authenticationType !== trm_registry_types_1.AuthenticationType.NO_AUTH) {
-            logger.loading(`Logging into registry...`);
-            yield oRegistry.authenticate(inquirer, logger, registryAuth);
-            const whoami = yield oRegistry.whoAmI();
-            logger.success(`Logged in as "${whoami.username}"`);
-        }
-        const oSystem = new trm_core_1.SystemConnector({
+        trm_core_1.Inquirer.inquirer = new trm_core_1.CliInquirer();
+        trm_core_1.SystemConnector.systemConnector = new trm_core_1.ServerSystemConnector({
             dest: data.systemDest,
             ashost: data.systemAsHost,
-            sysnr: data.systemSysNr,
-            saprouter: data.systemSapRouter
+            sysnr: data.systemSysnr
         }, {
             client: data.systemClient,
-            lang: data.systemLang,
             user: data.systemUser,
-            passwd: data.systemPassword
-        }, logger);
-        yield oSystem.connect();
+            passwd: data.systemPassword,
+            lang: data.systemLang
+        });
+        yield trm_core_1.SystemConnector.connect();
+        const registry = yield _getRegistry(data.registryEndpoint, data.registryAuth);
+        const packageName = data.packageName;
+        const version = data.packageVersion;
+        const allowReplace = data.allowReplace;
+        const force = data.force;
+        const generateTransport = data.generateTransport;
+        const ignoreDependencies = data.ignoreDependencies;
+        const importTimeout = data.importTimeout;
+        const keepOriginalDevclass = data.keepOriginalDevclass;
+        const packageReplacements = _getPackageReplacements(data.packageReplacements);
+        const r3transTempFolder = data.r3transTempFolder;
+        const skipCustImport = data.skipCustImport;
+        const skipLangImport = data.skipLangImport;
+        const skipObjectTypesCheck = data.skipObjectTypesCheck;
+        const skipSapEntriesCheck = data.skipSapEntriesCheck;
+        const transportLayer = data.transportLayer;
+        const wbTrTargetSystem = data.wbTrTargetSystem;
         yield (0, trm_core_1.install)({
             packageName,
-            version: packageVersion,
-            ci: true,
-            forceInstall,
-            ignoreSapEntries,
+            version,
+            registry,
+            allowReplace,
+            force,
+            generateTransport,
+            ignoreDependencies,
             importTimeout,
-            keepOriginalPackages,
-            packageReplacements: packageReplacements,
-            skipDependencies,
-            skipWbTransport,
-            targetSystem,
-            transportLayer
-        }, inquirer, oSystem, oRegistry, logger);
+            keepOriginalDevclass,
+            packageReplacements,
+            r3transOptions: {
+                tempDirPath: r3transTempFolder
+            },
+            skipCustImport,
+            skipLangImport,
+            skipObjectTypesCheck,
+            skipSapEntriesCheck,
+            transportLayer,
+            wbTrTargetSystem,
+            silent: true
+        });
     });
 }
 exports.install = install;

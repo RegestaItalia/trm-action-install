@@ -1,104 +1,141 @@
-import { AuthenticationType } from "trm-registry-types";
-import { CoreEnv, Logger, Inquirer, Registry, SystemConnector, install as trmInstall, TraceLevel } from "trm-core";
-import * as fs from "fs";
+import { CliInquirer, ConsoleLogger, Inquirer, InstallPackageReplacements, Logger, Registry, ServerSystemConnector, SystemConnector, install as action } from "trm-core";
+import * as core from "@actions/core";
+import { GithubLogger } from "./GithubLogger";
 
 export type ActionArgs = {
-    registryEndpoint?: string,
-    registryAuth?: string,
     systemDest: string,
     systemAsHost: string,
-    systemSysNr: string,
-    systemSapRouter?: string,
+    systemSysnr: string,
     systemClient: string,
-    systemLang: string,
     systemUser: string,
     systemPassword: string,
+    systemLang: string,
     packageName: string,
-    packageVersion?: string,
-    forceInstall: boolean,
-    ignoreSapEntries: boolean,
+    packageVersion: string,
+    allowReplace: boolean,
+    force: boolean,
+    generateTransport: boolean,
+    ignoreDependencies: boolean,
     importTimeout: number,
-    keepOriginalPackages: boolean,
+    keepOriginalDevclass: boolean,
+    registryEndpoint: string,
+    skipCustImport: boolean,
+    skipLangImport: boolean,
+    skipObjectTypesCheck: boolean,
+    skipSapEntriesCheck: boolean,
+    transportLayer?: string,
+    wbTrTargetSystem?: string,
     packageReplacements?: string,
-    skipDependencies: boolean,
-    skipWbTransport: boolean,
-    targetSystem?: string,
-    transportLayer?: string
+    registryAuth?: string,
+    r3transTempFolder?: string,
+    simpleLog: boolean
 };
 
-export async function install(data: ActionArgs) {
-
-    const registryEndpoint = data.registryEndpoint || 'public';
-    const registryAuth = data.registryAuth ? JSON.parse(data.registryAuth) : undefined;
-    const logger = new Logger(CoreEnv.CLI, TraceLevel.TRACE_ALL);
-    const inquirer = new Inquirer(CoreEnv.DUMMY);
-    const oRegistry = new Registry(registryEndpoint, registryEndpoint);
-
-    const packageName = data.packageName;
-    const packageVersion = data.packageVersion || 'latest';
-    const forceInstall = data.forceInstall;
-    const ignoreSapEntries = data.ignoreSapEntries;
-    const importTimeout = data.importTimeout;
-    const keepOriginalPackages = data.keepOriginalPackages;
-    const skipDependencies = data.skipDependencies;
-    const skipWbTransport = data.skipWbTransport;
-    const targetSystem = data.targetSystem;
-    const transportLayer = data.transportLayer;
-    var packageReplacements: string | {
-        originalDevclass: string;
-        installDevclass: string;
-    }[] = data.packageReplacements;
-
-    if(packageReplacements){
-        var sPackageReplacements: string;
-        try {
-            sPackageReplacements = fs.readFileSync(packageReplacements).toString();
-        } catch (e) {
-            sPackageReplacements = packageReplacements;
+const _getRegistry = async (endpoint: string, auth?: string): Promise<Registry> => {
+    const registry = new Registry(endpoint);
+    if(auth){
+        var oAuth: any;
+        try{
+            oAuth = JSON.parse(auth);
+        }catch(e){
+            throw new Error(`Invalid registry authentication data.`);
         }
-        packageReplacements = JSON.parse(sPackageReplacements);
-    }else{
+        Logger.loading(`Logging into registry...`);
+        await registry.authenticate(oAuth);
+        const whoami = await registry.whoAmI();
+        const ping = await registry.ping();
+        Logger.success(`Logged in as "${whoami.username}"`);
+        if(ping.wallMessage){
+            Logger.registryResponse(ping.wallMessage);
+        }
+    }
+    return registry;
+}
+
+const _getPackageReplacements = (iPackageReplacements: string): InstallPackageReplacements[] => {
+    var packageReplacements;
+    try{
+        packageReplacements = JSON.parse(iPackageReplacements).map(o => {
+            return {
+                originalDevclass: o.originalDevclass,
+                installDevclass: o.installDevclass
+            }
+        });
+    }catch(e){
         packageReplacements = [];
     }
+    packageReplacements.forEach(o => {
+        if(!o.originalDevclass){
+            throw new Error(`Package replacement input: missing original devclass.`);
+        }
+        if(!o.installDevclass){
+            throw new Error(`Package replacement input: missing install devclass.`);
+        }
+    });
+    return packageReplacements;
+}
 
-    const registryPing = await oRegistry.ping();
-    if (registryPing.wallMessage) {
-        logger.registryResponse(registryPing.wallMessage);
+export async function install(data: ActionArgs) {
+    const debug = core.isDebug();
+    if(data.simpleLog){
+        Logger.logger = new ConsoleLogger(debug);
+    }else{
+        Logger.logger = new GithubLogger(debug);
     }
-    if (registryAuth && registryPing.authenticationType !== AuthenticationType.NO_AUTH) {
-        logger.loading(`Logging into registry...`);
-        await oRegistry.authenticate(inquirer, logger, registryAuth);
-        const whoami = await oRegistry.whoAmI();
-        logger.success(`Logged in as "${whoami.username}"`);
-    }
-    const oSystem = new SystemConnector({
+    Inquirer.inquirer = new CliInquirer(); //TODO: dummy inquirer that throws error is needs user interaction
+    SystemConnector.systemConnector = new ServerSystemConnector({
         dest: data.systemDest,
         ashost: data.systemAsHost,
-        sysnr: data.systemSysNr,
-        saprouter: data.systemSapRouter
+        sysnr: data.systemSysnr
     }, {
         client: data.systemClient,
-        lang: data.systemLang,
         user: data.systemUser,
-        passwd: data.systemPassword
-    }, logger);
-    await oSystem.connect();
+        passwd: data.systemPassword,
+        lang: data.systemLang
+    });
+
+    //connections
+    await SystemConnector.connect();
+    const registry = await _getRegistry(data.registryEndpoint, data.registryAuth);
+
+    //data parsing
+    const packageName = data.packageName;
+    const version = data.packageVersion;
+    const allowReplace = data.allowReplace;
+    const force = data.force;
+    const generateTransport = data.generateTransport;
+    const ignoreDependencies = data.ignoreDependencies;
+    const importTimeout = data.importTimeout;
+    const keepOriginalDevclass = data.keepOriginalDevclass;
+    const packageReplacements = _getPackageReplacements(data.packageReplacements);
+    const r3transTempFolder = data.r3transTempFolder;
+    const skipCustImport = data.skipCustImport;
+    const skipLangImport = data.skipLangImport;
+    const skipObjectTypesCheck = data.skipObjectTypesCheck;
+    const skipSapEntriesCheck = data.skipSapEntriesCheck;
+    const transportLayer = data.transportLayer;
+    const wbTrTargetSystem = data.wbTrTargetSystem;
     
-    await trmInstall({
+    await action({
         packageName,
-        version: packageVersion,
-        ci: true,
-        forceInstall,
-        ignoreSapEntries,
+        version,
+        registry,
+        allowReplace,
+        force,
+        generateTransport,
+        ignoreDependencies,
         importTimeout,
-        keepOriginalPackages,
-        packageReplacements: packageReplacements as {
-            originalDevclass: string;
-            installDevclass: string;
-        }[],
-        skipDependencies,
-        skipWbTransport,
-        targetSystem,
-        transportLayer
-    }, inquirer, oSystem, oRegistry, logger);
+        keepOriginalDevclass,
+        packageReplacements,
+        r3transOptions: {
+            tempDirPath: r3transTempFolder
+        },
+        skipCustImport,
+        skipLangImport,
+        skipObjectTypesCheck,
+        skipSapEntriesCheck,
+        transportLayer,
+        wbTrTargetSystem,
+        silent: true
+    });
 }

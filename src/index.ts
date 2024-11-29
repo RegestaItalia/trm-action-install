@@ -1,42 +1,65 @@
-import * as core from "@actions/core";
-import { install } from "./install";
+import { getBooleanInput, getInput, isDebug, setFailed } from "@actions/core";
+import { ActionArgs, installWrapper } from "./installWrapper";
+import { GithubLogger } from "./GithubLogger";
+import { Inquirer, Logger, InstallActionOutput } from "trm-core";
+import { GithubInquirer } from "./GithubInquirer";
 
-var importTimeout: number;
-try{
-    importTimeout = parseInt(core.getInput('importTimeout'));
-}catch(e){
-    core.setFailed(`Invalid import timeout value.`);
+const main = async(data: ActionArgs): Promise<InstallActionOutput> => {
+    //set logger
+    Logger.logger = new GithubLogger(isDebug());
+
+    //set inquirer
+    Inquirer.inquirer = new GithubInquirer();
+
+    return await installWrapper(data);
 }
 
-install({
-    systemDest: core.getInput('systemDest'),
-    systemAsHost: core.getInput('systemAsHost'),
-    systemSysnr: core.getInput('systemSysnr'),
-    systemClient: core.getInput('systemClient'),
-    systemUser: core.getInput('systemUser'),
-    systemPassword: core.getInput('systemPassword'),
-    systemLang: core.getInput('systemLang'),
-    packageName: core.getInput('packageName'),
-    packageVersion: core.getInput('packageVersion'),
-    allowReplace: core.getBooleanInput('allowReplace'),
-    force: core.getBooleanInput('force'),
-    generateTransport: core.getBooleanInput('generateTransport'),
-    ignoreDependencies: core.getBooleanInput('ignoreDependencies'),
-    importTimeout,
-    keepOriginalDevclass: core.getBooleanInput('keepOriginalDevclass'),
-    registryEndpoint: core.getInput('registryEndpoint'),
-    skipCustImport: core.getBooleanInput('skipCustImport'),
-    skipLangImport: core.getBooleanInput('skipLangImport'),
-    skipObjectTypesCheck: core.getBooleanInput('skipObjectTypesCheck'),
-    skipSapEntriesCheck: core.getBooleanInput('skipSapEntriesCheck'),
-    transportLayer: core.getInput('transportLayer'),
-    wbTrTargetSystem: core.getInput('wbTrTargetSystem'),
-    packageReplacements: core.getInput('packageReplacements'),
-    registryAuth: core.getInput('registryAuth'),
-    r3transTempFolder: core.getInput('r3transTempFolder'),
-    simpleLog: core.getBooleanInput('simpleLog'),
-}).then(() => {
-    console.log("Package installed.");
-}).catch(err => {
-    core.setFailed(err.message);
+const sImportTransportTimeout = getInput("importTransportTimeout", { required: true, trimWhitespace: true });
+var importTransportTimeout: number;
+try{
+    if(sImportTransportTimeout){
+        importTransportTimeout = parseInt(sImportTransportTimeout);
+    }
+}catch(e){
+    setFailed(`Invalid import transport timeout value: "${sImportTransportTimeout}", expected seconds.`);
+}
+main({
+    systemLoginUser: getInput("systemLoginUser", { required: true, trimWhitespace: true }),
+    systemLoginPassword: getInput("systemLoginPassword", { required: true, trimWhitespace: true }),
+    systemLoginLanguage: getInput("systemLoginLanguage", { required: true, trimWhitespace: true }),
+    name: getInput("name", { required: true, trimWhitespace: true }),
+    registryEndpoint: getInput("registryEndpoint", { required: true, trimWhitespace: true }),
+    safe: getBooleanInput("safe", { required: true, trimWhitespace: true }),
+    noDependencies: getBooleanInput("noDependencies", { required: true, trimWhitespace: true }),
+    noSapEntries: getBooleanInput("noSapEntries", { required: true, trimWhitespace: true }),
+    noObjectTypesCheck: getBooleanInput("noObjectTypesCheck", { required: true, trimWhitespace: true }),
+    importTransportTimeout,
+    noLanguageTransport: getBooleanInput("noLanguageTransport", { required: true, trimWhitespace: true }),
+    noCustomizingTransport: getBooleanInput("noCustomizingTransport", { required: true, trimWhitespace: true }),
+    keepOriginalAbapPackages: getBooleanInput("keepOriginalAbapPackages", { required: true, trimWhitespace: true }),
+    createInstallTransport: getBooleanInput("createInstallTransport", { required: true, trimWhitespace: true }),
+    systemRFCDest: getInput("systemRFCDest", { required: false, trimWhitespace: true }),
+    systemRFCAsHost: getInput("systemRFCAsHost", { required: false, trimWhitespace: true }),
+    systemRFCSysnr: getInput("systemRFCSysnr", { required: false, trimWhitespace: true }),
+    systemRFCSAPRouter: getInput("systemRFCSAPRouter", { required: false, trimWhitespace: true }),
+    systemRESTEndpoint: getInput("systemRESTEndpoint", { required: false, trimWhitespace: true }),
+    systemRESTRfcDestination: getInput("systemRESTRfcDestination", { required: false, trimWhitespace: true }),
+    systemLoginClient: getInput("systemLoginClient", { required: false, trimWhitespace: true }),
+    r3transDirPath: getInput("r3transDirPath", { required: false, trimWhitespace: true }),
+    registryToken: getInput("registryToken", { required: false, trimWhitespace: true }),
+    registryAuth: getInput("registryAuth", { required: false, trimWhitespace: true }),
+    version: getInput("version", { required: false, trimWhitespace: true }),
+    overwrite: getBooleanInput("overwrite", { required: true, trimWhitespace: true }),
+    integrity: getInput("integrity", { required: false, trimWhitespace: true }),
+    packageReplacements: getInput("packageReplacements", { required: false, trimWhitespace: true }),
+    transportLayer: getInput("transportLayer", { required: false, trimWhitespace: true }),
+    installTransportTargetSystem: getInput("installTransportTargetSystem", { required: false, trimWhitespace: true })
+}).then(result => {
+    var sSuccess = `Installed ${result.trmPackage.packageName}`;
+    if(result.installTransport){
+        sSuccess += `, use transport request ${result.installTransport.trkorr}`;
+    }
+    Logger.success(sSuccess);
+}).catch(e => {
+    setFailed(e);
 });

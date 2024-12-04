@@ -26,7 +26,7 @@ To view an example of usage, refer to [this article](https://docs.trmregistry.co
     token: ${{ secrets.GITHUB_TOKEN }}
     path: r3trans
 - name: TRM install package
-  uses: RegestaItalia/trm-action-install@3.0.1
+  uses: RegestaItalia/trm-action-install@latest
   with:
     r3transDirPath: './r3trans'
     systemRESTEndpoint: ${{ vars.ENDPOINT }}
@@ -52,7 +52,7 @@ To view an example of usage, refer to [this article](https://docs.trmregistry.co
     token: ${{ secrets.GITHUB_TOKEN }}
     path: r3trans
 - name: TRM install package
-  uses: RegestaItalia/trm-action-install@3.0.1
+  uses: RegestaItalia/trm-action-install@latest
   with:
     r3transDirPath: './r3trans'
     systemRFCDest: ${{ vars.DEST }}

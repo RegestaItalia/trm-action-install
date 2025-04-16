@@ -3,8 +3,12 @@
     "version": "3.0.2",
     "description": "Github Action - TRM Install",
     "scripts": {
-        "build": "tsc",
-        "package": "ncc build src/index.ts -o dist --source-map --license licenses.txt"
+        "cleanTmpBuild": "rimraf tmpDist/",
+        "cleanTmpTest": "rimraf dist/**/test.*",
+        "build": "npm run cleanTmpBuild && tsc --sourceMap false",
+        "prepublishOnly": "npm run build && cleanTmpTest",
+        "cleanBuild": "rimraf dist/",
+        "package": "npm run cleanBuild && ncc build src/index.ts -o dist --source-map --license licenses.txt"
     },
     "homepage": "https://github.com/RegestaItalia/trm-action-install",
     "repository": {
@@ -14,7 +18,8 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
-        "/dist"
+        "/dist",
+        "!dist/test.*"
     ],
     "author": {
         "name": "Simone Gaffurini",

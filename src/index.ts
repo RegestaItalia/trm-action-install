@@ -1,8 +1,9 @@
 import { getBooleanInput, getInput, isDebug, setFailed } from "@actions/core";
 import { ActionArgs, installWrapper } from "./installWrapper";
 import { GithubLogger } from "./GithubLogger";
-import { Inquirer, Logger, InstallActionOutput } from "trm-core";
+import { InstallActionOutput } from "trm-core";
 import { GithubInquirer } from "./GithubInquirer";
+import { Logger, Inquirer } from "trm-commons";
 
 const main = async(data: ActionArgs): Promise<InstallActionOutput> => {
     //set logger

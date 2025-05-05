@@ -1,4 +1,5 @@
-import { Logger, Login, PUBLIC_RESERVED_KEYWORD, InstallActionInput, InstallActionOutput, RESTSystemConnector, RFCSystemConnector, Registry, SystemConnector, install, InstallPackageReplacements } from "trm-core";
+import { Logger } from "trm-commons";
+import { Login, PUBLIC_RESERVED_KEYWORD, InstallActionInput, InstallActionOutput, RESTSystemConnector, RFCSystemConnector, Registry, SystemConnector, install, InstallPackageReplacements } from "trm-core";
 
 export type ActionArgs = {
     systemLoginUser: string,

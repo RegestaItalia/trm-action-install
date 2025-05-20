@@ -25,7 +25,7 @@ inputs:
     required: false
   systemLoginClient:
     description: Source system login client.
-    required: false
+    required: true
   systemLoginUser:
     description: Source system login user.
     required: true

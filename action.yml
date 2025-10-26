@@ -59,13 +59,6 @@ inputs:
     description: Update if already installed.
     required: false
     default: true
-  integrity:
-    description: TRM package integrity.
-    required: false
-  safe:
-    description: Install TRM package in safe mode.
-    required: false
-    default: false
   noDependencies:
     description: Skip install of TRM package dependencies.
     required: false

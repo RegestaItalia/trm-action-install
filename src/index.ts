@@ -56,9 +56,9 @@ main({
     transportLayer: getInput("transportLayer", { required: false, trimWhitespace: true }),
     installTransportTargetSystem: getInput("installTransportTargetSystem", { required: false, trimWhitespace: true })
 }).then(result => {
-    var sSuccess = `Installed ${result.trmPackage.packageName}`;
+    var sSuccess = `${result.manifest.name} v${result.manifest.version} installed`;
     if(result.installTransport){
-        sSuccess += `, use transport request ${result.installTransport.trkorr}`;
+        sSuccess += `, use ${result.installTransport.trkorr} transport in landscape`;
     }
     Logger.success(sSuccess);
 }).catch(e => {

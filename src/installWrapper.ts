@@ -1,5 +1,5 @@
 import { Logger } from "trm-commons";
-import { Login, PUBLIC_RESERVED_KEYWORD, InstallActionInput, InstallActionOutput, RESTSystemConnector, RFCSystemConnector, Registry, SystemConnector, install, InstallPackageReplacements } from "trm-core";
+import { Login, PUBLIC_RESERVED_KEYWORD, InstallActionInput, InstallActionOutput, RESTSystemConnector, RFCSystemConnector, RegistryV2, SystemConnector, install, InstallPackageReplacements } from "trm-core";
 
 export type ActionArgs = {
     systemLoginUser: string,
@@ -74,14 +74,18 @@ export async function installWrapper(data: ActionArgs): Promise<InstallActionOut
     if (data.registryEndpoint.toLowerCase() === PUBLIC_RESERVED_KEYWORD) {
         data.registryEndpoint = PUBLIC_RESERVED_KEYWORD;
     }
-    const registry = new Registry(data.registryEndpoint, data.registryEndpoint);
+    const registry = new RegistryV2(data.registryEndpoint, data.registryEndpoint);
+    const ping = await registry.ping();
+    if(ping.messages){
+        ping.messages.forEach(o => Logger.registryResponse(o));
+    }
     if (registryAuth) {
         Logger.loading(`Logging into "${data.registryEndpoint}" registry...`);
         await registry.authenticate(registryAuth);
         const whoami = await registry.whoAmI();
-        Logger.success(`Logged in as ${whoami.username}`);
-        if (whoami.logonMessage) {
-            Logger.registryResponse(whoami.logonMessage);
+        Logger.success(`Logged in as ${whoami.user}`);
+        if (whoami.messages) {
+            whoami.messages.forEach(o => Logger.registryResponse(o));
         }
     }
 
@@ -106,12 +110,10 @@ export async function installWrapper(data: ActionArgs): Promise<InstallActionOut
             name: data.name,
             version: data.version,
             overwrite: data.overwrite,
-            integrity: data.integrity,
             registry
         },
         installData: {
             checks: {
-                safe: data.safe,
                 noDependencies: data.noDependencies,
                 noSapEntries: data.noSapEntries,
                 noObjectTypes: data.noObjectTypesCheck

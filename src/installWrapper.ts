@@ -57,7 +57,7 @@ export async function installWrapper(data: ActionArgs): Promise<InstallActionOut
     } else {
         throw new Error(`No system connection defined: an RFC/REST connection must be provided.`);
     }
-    await SystemConnector.connect();
+    await SystemConnector.connect(false);
 
     //get registry
     var registryAuth: any = {};
@@ -119,7 +119,6 @@ export async function installWrapper(data: ActionArgs): Promise<InstallActionOut
                 noObjectTypes: data.noObjectTypesCheck
             },
             import: {
-                timeout: data.importTransportTimeout,
                 noLang: data.noLanguageTransport,
                 noCust: data.noCustomizingTransport
             },
